@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>DAB Activity Location — Daily Capture</title>
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy-light:#122C52;
+    --blue:#0B63CE;
+    --blue-light:#E8F1FC;
+    --green:#178A5A;
+    --amber:#B9740A;
+    --ink:#1A2233;
+    --muted:#5B6472;
+    --line:#DCE1E8;
+    --bg:#F4F6F9;
+    --white:#FFFFFF;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    padding-bottom:110px;
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
+    color:#fff;
+    padding:22px 20px 26px;
+  }
+  header .eyebrow{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#9FC1F2;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  header h1{
+    margin:0;
+    font-size:22px;
+    line-height:1.3;
+  }
+  header p{
+    margin:8px 0 0;
+    font-size:13.5px;
+    color:#C3D5EF;
+  }
+  main{
+    max-width:520px;
+    margin:0 auto;
+    padding:18px 16px 0;
+  }
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin:0 0 14px;
+    font-weight:700;
+  }
+  label{
+    display:block;
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 6px;
+    color:var(--ink);
+  }
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  input[type=text],
+  input[type=date],
+  input[type=time],
+  select{
+    width:100%;
+    padding:13px 12px;
+    font-size:16px;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:var(--white);
+    color:var(--ink);
+    font-family:inherit;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235B6472' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 14px center;
+    padding-right:34px;
+  }
+  input:focus,select:focus{
+    outline:none;
+    border-color:var(--blue);
+    box-shadow:0 0 0 3px var(--blue-light);
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .activity-types{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .activity-types input{display:none;}
+  .activity-types label{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:12px 6px;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    margin:0;
+    min-height:44px;
+  }
+  .activity-types input:checked + label{
+    border-color:var(--blue);
+    background:var(--blue-light);
+    color:var(--blue);
+  }
+  .gps-btn{
+    width:100%;
+    padding:14px;
+    border:1.5px dashed var(--blue);
+    background:var(--blue-light);
+    color:var(--blue);
+    border-radius:9px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .gps-btn:active{transform:scale(.98);}
+  .gps-status{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--muted);
+    display:none;
+  }
+  .gps-status.active{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--green);
+    font-weight:600;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--green);
+    flex-shrink:0;
+  }
+  .coords{
+    margin-top:8px;
+    font-size:12.5px;
+    color:var(--muted);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .footer-bar{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:var(--white);
+    border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    max-width:520px;
+    margin:0 auto;
+  }
+  .submit-btn{
+    width:100%;
+    padding:16px;
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .submit-btn:disabled{opacity:.55;}
+  .submit-btn:active:not(:disabled){transform:scale(.99);}
+  .msg{
+    text-align:center;
+    font-size:13.5px;
+    font-weight:600;
+    padding:10px;
+    border-radius:8px;
+    margin:0 16px 12px;
+    display:none;
+  }
+  .msg.success{display:block;background:#E8F6EF;color:var(--green);}
+  .msg.error{display:block;background:#FBEAEA;color:#B23B3B;}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Berhampur Area · Daily Field Capture</div>
+  <h1>DAB Activity Location</h1>
+  <p>Fill this once at the start of today's activity. Takes under a minute — JCA-ACT will route customers here.</p>
+</header>
+
+<main>
+  <form id="dabForm">
+
+    <div class="card">
+      <h2>Activity Timing</h2>
+      <div class="field">
+        <label for="date">Date</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="timeFrom">Time From</label>
+          <input type="time" id="timeFrom" required>
+        </div>
+        <div class="field">
+          <label for="timeTo">Time To</label>
+          <input type="time" id="timeTo" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>DAB &amp; Distributor Details</h2>
+      <div class="field">
+        <label for="territory">Territory</label>
+        <select id="territory" required>
+          <option value="" disabled selected>Select territory</option>
+          <option value="BRAH">Berhampur (BRAH)</option>
+          <option value="BNPN">Bhawanipatna (BNPN)</option>
+          <option value="JYPR">Jeypore (JYPR)</option>
+          <option value="RYGD">Rayagada (RYGD)</option>
+          <option value="SNBD">Sunabeda (SNBD)</option>
+          <option value="BLGR">Balangir (BLGR)</option>
+          <option value="KURD">Khurdha (KURD)</option>
+          <option value="JTNI">Jatani (JTNI)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dabPrmId">DAB PRM ID</label>
+        <input type="text" id="dabPrmId" placeholder="e.g. PRM10234" required>
+      </div>
+      <div class="field">
+        <label for="dabName">DAB Name</label>
+        <input type="text" id="dabName" placeholder="Full name of DAB" required>
+      </div>
+      <div class="field">
+        <label for="distributorName">Distributor Name</label>
+        <input type="text" id="distributorName" placeholder="Distributor name" required>
+      </div>
+      <div class="field">
+        <label for="jioPointName">JioPoint Name</label>
+        <input type="text" id="jioPointName" placeholder="Associated JioPoint" required>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Activity Location</h2>
+      <button type="button" class="gps-btn" id="gpsBtn">📍 Capture my current location</button>
+      <div class="gps-status" id="gpsStatus">
+        <span class="dot"></span> Location captured
+        <div class="coords" id="coordsText"></div>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label for="address">Activity Location Address</label>
+        <input type="text" id="address" placeholder="Landmark, street, village/town" required>
+      </div>
+      <div class="field">
+        <label for="pinCode">Pin Code</label>
+        <input type="text" id="pinCode" inputmode="numeric" maxlength="6" placeholder="6-digit pin code" required>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Type of Activity</h2>
+      <div class="activity-types">
+        <div>
+          <input type="radio" name="activityType" id="atShamiyana" value="Shamiyana">
+          <label for="atShamiyana">Shamiyana</label>
+        </div>
+        <div>
+          <input type="radio" name="activityType" id="atGazebo" value="Gazebo">
+          <label for="atGazebo">Gazebo</label>
+        </div>
+        <div>
+          <input type="radio" name="activityType" id="atUmbrella" value="Umbrella">
+          <label for="atUmbrella">Umbrella</label>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</main>
+
+<div class="msg" id="msg"></div>
+<div class="footer-bar">
+  <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submit Activity Location</button>
+</div>
+
+<script>
+  // TODO: paste your deployed Apps Script Web App URL here
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcFejoFjqykdmz3Bwoa0ZNblDAV6UkvFy9939mK74SDzb74qIsFCU8FnoJItiZR5MN0g/exec";
+
+  let capturedLat = "";
+  let capturedLng = "";
+
+  document.getElementById("date").valueAsDate = new Date();
+
+  document.getElementById("gpsBtn").addEventListener("click", function(){
+    const btn = this;
+    const status = document.getElementById("gpsStatus");
+    const coordsText = document.getElementById("coordsText");
+    if(!navigator.geolocation){
+      alert("Location not supported on this device/browser. Please enter address manually.");
+      return;
+    }
+    btn.textContent = "📍 Getting location…";
+    navigator.geolocation.getCurrentPosition(function(pos){
+      capturedLat = pos.coords.latitude.toFixed(6);
+      capturedLng = pos.coords.longitude.toFixed(6);
+      status.classList.add("active");
+      coordsText.textContent = capturedLat + ", " + capturedLng;
+      btn.textContent = "📍 Recapture location";
+    }, function(err){
+      alert("Could not get location. You can still submit — just double-check the address field.");
+      btn.textContent = "📍 Capture my current location";
+    }, { enableHighAccuracy:true, timeout:10000 });
+  });
+
+  function showMsg(text, type){
+    const msg = document.getElementById("msg");
+    msg.textContent = text;
+    msg.className = "msg " + type;
+  }
+
+  function submitForm(){
+    const territory = document.getElementById("territory").value;
+    const dabPrmId = document.getElementById("dabPrmId").value.trim();
+    const dabName = document.getElementById("dabName").value.trim();
+    const distributorName = document.getElementById("distributorName").value.trim();
+    const jioPointName = document.getElementById("jioPointName").value.trim();
+    const address = document.getElementById("address").value.trim();
+    const pinCode = document.getElementById("pinCode").value.trim();
+    const date = document.getElementById("date").value;
+    const timeFrom = document.getElementById("timeFrom").value;
+    const timeTo = document.getElementById("timeTo").value;
+    const activityTypeEl = document.querySelector('input[name="activityType"]:checked');
+
+    if(!territory || !dabPrmId || !dabName || !distributorName || !jioPointName ||
+       !address || !pinCode || !date || !timeFrom || !timeTo || !activityTypeEl){
+      showMsg("Please fill all fields before submitting.", "error");
+      return;
+    }
+    if(pinCode.length !== 6){
+      showMsg("Pin code should be 6 digits.", "error");
+      return;
+    }
+
+    const payload = {
+      territory: territory,
+      dabPrmId: dabPrmId,
+      dabName: dabName,
+      distributorName: distributorName,
+      jioPointName: jioPointName,
+      latitude: capturedLat,
+      longitude: capturedLng,
+      address: address,
+      pinCode: pinCode,
+      date: date,
+      timeFrom: timeFrom,
+      timeTo: timeTo,
+      activityType: activityTypeEl.value
+    };
+
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    }).then(function(){
+      showMsg("✅ Activity location submitted. Visible to JCA-ACT within minutes.", "success");
+      btn.textContent = "Submitted ✓";
+      setTimeout(function(){
+        document.getElementById("dabForm").reset();
+        document.getElementById("date").valueAsDate = new Date();
+        document.getElementById("gpsStatus").classList.remove("active");
+        capturedLat = ""; capturedLng = "";
+        btn.disabled = false;
+        btn.textContent = "Submit Activity Location";
+      }, 2500);
+    }).catch(function(){
+      showMsg("Submission failed — check your internet connection and try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Submit Activity Location";
+    });
+  }
+</script>
+
+</body>
+</html>
