@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's DAB Activity Map</title>
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy-light:#122C52;
+    --blue:#0B63CE;
+    --blue-light:#E8F1FC;
+    --green:#178A5A;
+    --line:#DCE1E8;
+    --bg:#F4F6F9;
+    --white:#FFFFFF;
+    --ink:#1A2233;
+    --muted:#5B6472;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
+    color:#fff;
+    padding:20px 16px 22px;
+  }
+  header .eyebrow{
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:#9FC1F2;font-weight:600;margin-bottom:6px;
+  }
+  header h1{margin:0;font-size:21px;}
+  header p{margin:6px 0 0;font-size:13px;color:#C3D5EF;}
+  .toolbar{
+    display:flex;gap:8px;padding:14px 16px 0;max-width:640px;margin:0 auto;
+    flex-wrap:wrap;
+  }
+  .toolbar button{
+    flex:1;min-width:130px;
+    padding:11px;border-radius:9px;border:1.5px solid var(--line);
+    background:var(--white);font-size:13.5px;font-weight:700;color:var(--navy);
+    cursor:pointer;
+  }
+  .toolbar button.primary{
+    background:var(--navy);color:#fff;border-color:var(--navy);
+  }
+  main{max-width:640px;margin:0 auto;padding:14px 16px 40px;}
+  .summary{
+    display:flex;gap:10px;margin-bottom:16px;
+  }
+  .summary .stat{
+    flex:1;background:var(--white);border:1px solid var(--line);
+    border-radius:10px;padding:12px;text-align:center;
+  }
+  .summary .stat .num{font-size:20px;font-weight:800;color:var(--navy);}
+  .summary .stat .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+  .territory-group{margin-bottom:18px;}
+  .territory-title{
+    font-size:13px;font-weight:800;color:var(--blue);
+    text-transform:uppercase;letter-spacing:.06em;
+    margin-bottom:8px;padding-left:2px;
+  }
+  .dab-card{
+    background:var(--white);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:10px;
+  }
+  .dab-card .top-row{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+    margin-bottom:8px;
+  }
+  .dab-card .name{font-size:15px;font-weight:700;}
+  .dab-card .type-badge{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+    background:var(--blue-light);color:var(--blue);white-space:nowrap;
+  }
+  .dab-card .meta{font-size:13px;color:var(--muted);line-height:1.6;}
+  .dab-card .meta b{color:var(--ink);}
+  .dab-card .actions{margin-top:10px;display:flex;gap:8px;}
+  .dab-card .actions a{
+    flex:1;text-align:center;padding:9px;border-radius:8px;
+    font-size:12.5px;font-weight:700;text-decoration:none;
+    border:1.5px solid var(--line);color:var(--navy);
+  }
+  .dab-card .actions a.map{background:var(--blue-light);color:var(--blue);border-color:var(--blue-light);}
+  .empty{
+    text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;
+  }
+  .loading{text-align:center;padding:40px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Berhampur Area · Live</div>
+  <h1>Today's DAB Activity Map</h1>
+  <p id="dateLine">Loading…</p>
+</header>
+
+<div class="toolbar">
+  <button class="primary" onclick="copyWhatsAppText()">📋 Copy WhatsApp Broadcast</button>
+  <button onclick="loadData()">🔄 Refresh</button>
+</div>
+
+<main>
+  <div class="summary">
+    <div class="stat"><div class="num" id="statCount">–</div><div class="label">Active Today</div></div>
+    <div class="stat"><div class="num" id="statTerritories">–</div><div class="label">Territories</div></div>
+  </div>
+  <div id="content" class="loading">Loading today's DAB locations…</div>
+</main>
+
+<script>
+  // TODO: paste your deployed Apps Script Web App URL here (same as index.html)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcFejoFjqykdmz3Bwoa0ZNblDAV6UkvFy9939mK74SDzb74qIsFCU8FnoJItiZR5MN0g/exec";
+
+  const TERRITORY_NAMES = {
+    BRAH: "Berhampur",
+    BNPN: "Bhawanipatna",
+    JYPR: "Jeypore",
+    RYGD: "Rayagada",
+    SNBD: "Sunabeda",
+    BLGR: "Balangir",
+    KURD: "Khurdha",
+    JTNI: "Jatani"
+  };
+
+  let latestData = [];
+
+  function loadData(){
+    document.getElementById("content").innerHTML = '<div class="loading">Loading today\'s DAB locations…</div>';
+    fetch(SCRIPT_URL)
+      .then(r => r.json())
+      .then(res => {
+        latestData = res.data || [];
+        render(latestData);
+      })
+      .catch(() => {
+        document.getElementById("content").innerHTML =
+          '<div class="empty">Could not load data. Check connection or the Apps Script URL.</div>';
+      });
+  }
+
+  function render(data){
+    const dateLine = document.getElementById("dateLine");
+    dateLine.textContent = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" });
+
+    document.getElementById("statCount").textContent = data.length;
+    const territories = new Set(data.map(d => d["Territory"]));
+    document.getElementById("statTerritories").textContent = territories.size;
+
+    const content = document.getElementById("content");
+    if(data.length === 0){
+      content.innerHTML = '<div class="empty">No DAB activity locations submitted yet today.</div>';
+      return;
+    }
+
+    const grouped = {};
+    data.forEach(d => {
+      const t = d["Territory"] || "Unassigned";
+      if(!grouped[t]) grouped[t] = [];
+      grouped[t].push(d);
+    });
+
+    let html = "";
+    Object.keys(grouped).sort().forEach(t => {
+      const label = TERRITORY_NAMES[t] || t;
+      html += `<div class="territory-group"><div class="territory-title">${label} (${t})</div>`;
+      grouped[t].forEach(d => {
+        const mapsLink = d["Latitude"] && d["Longitude"]
+          ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
+          : `https://www.google.com/maps/search/${encodeURIComponent(d["Address"] + " " + d["Pin Code"])}`;
+        const callLink = "";
+        html += `
+          <div class="dab-card">
+            <div class="top-row">
+              <div class="name">${escapeHtml(d["JioPoint Name"] || d["DAB Name"])}</div>
+              <div class="type-badge">${escapeHtml(d["Activity Type"] || "")}</div>
+            </div>
+            <div class="meta">
+              <b>DAB:</b> ${escapeHtml(d["DAB Name"])} (${escapeHtml(d["DAB PRM ID"])})<br>
+              <b>Distributor:</b> ${escapeHtml(d["Distributor Name"])}<br>
+              <b>Address:</b> ${escapeHtml(d["Address"])}, ${escapeHtml(d["Pin Code"])}<br>
+              <b>Timing:</b> ${escapeHtml(d["Time From"])} – ${escapeHtml(d["Time To"])}
+            </div>
+            <div class="actions">
+              <a class="map" href="${mapsLink}" target="_blank">📍 Open Map</a>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+
+    content.innerHTML = html;
+  }
+
+  function escapeHtml(str){
+    if(!str) return "";
+    return String(str).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+
+  function copyWhatsAppText(){
+    if(latestData.length === 0){
+      alert("No data loaded yet.");
+      return;
+    }
+    const grouped = {};
+    latestData.forEach(d => {
+      const t = d["Territory"] || "Unassigned";
+      if(!grouped[t]) grouped[t] = [];
+      grouped[t].push(d);
+    });
+
+    let text = `🚀 *JCA-ACT × DAB | Today's DAB Activity Map*\n`;
+    text += new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" }) + `\n\n`;
+    text += `Route every interested MNP lead to the nearest point below. FREE MNP + Instant Gift.\n\n`;
+
+    Object.keys(grouped).sort().forEach(t => {
+      const label = TERRITORY_NAMES[t] || t;
+      text += `📍 *${label} (${t})*\n`;
+      grouped[t].forEach(d => {
+        const mapsLink = d["Latitude"] && d["Longitude"]
+          ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
+          : "";
+        text += `• ${d["JioPoint Name"]} — ${d["Address"]}, ${d["Pin Code"]}\n`;
+        text += `  🕐 ${d["Time From"]}–${d["Time To"]} | ${d["Activity Type"]} | DAB: ${d["DAB Name"]}\n`;
+        if(mapsLink) text += `  🗺️ ${mapsLink}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `🔥 No Lead Left Undelivered! Direct every customer today.`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Broadcast text copied — paste directly into the JCA-ACT WhatsApp group.");
+    }).catch(() => {
+      prompt("Copy this text manually:", text);
+    });
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>
