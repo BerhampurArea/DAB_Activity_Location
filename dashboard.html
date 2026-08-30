@@ -243,11 +243,10 @@
               <b>Mobile:</b> ${escapeHtml(d["DAB Mobile Number"])}<br>
               <b>Distributor:</b> ${escapeHtml(d["Distributor Name"])}<br>
               <b>Address:</b> ${escapeHtml(d["Address"])}, ${escapeHtml(d["Pin Code"])}<br>
-              <b>Timing:</b> ${escapeHtml(d["Time From"])} – ${escapeHtml(d["Time To"])}
+              <b>Timing:</b> ${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}
             </div>
             <div class="actions">
               <a class="map" href="${mapsLink}" target="_blank">📍 Open Map</a>
-              <a href="tel:${escapeHtml(d["DAB Mobile Number"])}">📞 Call DAB</a>
             </div>
           </div>`;
       });
@@ -262,6 +261,19 @@
     return String(str).replace(/[&<>"']/g, m => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     }[m]));
+  }
+
+  function to12Hour(timeStr){
+    if(!timeStr) return "";
+    const parts = String(timeStr).split(":");
+    if(parts.length < 2) return timeStr;
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1].padStart(2, "0");
+    if(isNaN(hours)) return timeStr;
+    const suffix = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if(hours === 0) hours = 12;
+    return hours + ":" + minutes + " " + suffix;
   }
 
   function copyWhatsAppText(){
@@ -288,7 +300,7 @@
           ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
           : "";
         text += `• ${d["JioPoint Name"]} — ${d["Address"]}, ${d["Pin Code"]}\n`;
-        text += `  🕐 ${d["Time From"]}–${d["Time To"]} | ${d["Activity Type"]} | DAB: ${d["DAB Name"]} (${d["DAB Mobile Number"]})\n`;
+        text += `  🕐 ${to12Hour(d["Time From"])}–${to12Hour(d["Time To"])} | ${d["Activity Type"]} | DAB: ${d["DAB Name"]} (${d["DAB Mobile Number"]})\n`;
         if(mapsLink) text += `  🗺️ ${mapsLink}\n`;
       });
       text += `\n`;
