@@ -88,6 +88,16 @@
     background:var(--white);border:1px solid var(--line);border-radius:12px;
     padding:14px;margin-bottom:10px;
   }
+  .dab-card.selected{
+    border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-light);
+  }
+  .select-chk{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:700;color:var(--muted);
+    padding:9px 4px;cursor:pointer;user-select:none;
+  }
+  .select-chk input{width:17px;height:17px;accent-color:var(--blue);cursor:pointer;}
+  .select-chk.selected{color:var(--blue);}
   .dab-card .top-row{
     display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
     margin-bottom:8px;
@@ -121,7 +131,7 @@
 </header>
 
 <div class="toolbar">
-  <button class="primary" onclick="copyWhatsAppText()">📋 Copy WhatsApp Broadcast</button>
+  <button class="primary" id="copyBtn" onclick="copyWhatsAppText()">📋 Copy Selected (0)</button>
   <button onclick="loadData()">🔄 Refresh</button>
 </div>
 
@@ -164,6 +174,13 @@
 
   let latestData = [];
   let selectedActivityType = "";
+  let selectedKeys = new Set();
+
+  function toggleSelect(key){
+    if(selectedKeys.has(key)) selectedKeys.delete(key);
+    else selectedKeys.add(key);
+    render(latestData, dateFilterEl.value || todayISO);
+  }
 
   const dateFilterEl = document.getElementById("dateFilter");
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -206,6 +223,11 @@
     document.getElementById("statLabel").textContent = isToday ? "Active Today" : "Active";
 
     document.getElementById("statCount").textContent = data.length;
+    const copyBtn = document.getElementById("copyBtn");
+    if(copyBtn){
+      const selCount = data.filter(d => selectedKeys.has(String(d["Timestamp"]))).length;
+      copyBtn.textContent = "📋 Copy Selected (" + selCount + ")";
+    }
     const territories = new Set(data.map(d => d["Territory"]));
     document.getElementById("statTerritories").textContent = territories.size;
 
@@ -231,9 +253,14 @@
         const mapsLink = d["Latitude"] && d["Longitude"]
           ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
           : `https://www.google.com/maps/search/${encodeURIComponent(d["Address"] + " " + d["Pin Code"])}`;
-        const callLink = "";
+        const key = String(d["Timestamp"]);
+        const isSelected = selectedKeys.has(key);
         html += `
-          <div class="dab-card">
+          <div class="dab-card${isSelected ? " selected" : ""}">
+            <label class="select-chk${isSelected ? " selected" : ""}">
+              <input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleSelect('${key.replace(/'/g,"\\'")}')">
+              ${isSelected ? "Selected for broadcast" : "Select for broadcast"}
+            </label>
             <div class="top-row">
               <div class="name">${escapeHtml(d["JioPoint Name"] || d["DAB Name"])}</div>
               <div class="type-badge">${escapeHtml(d["Activity Type"] || "")}</div>
@@ -241,7 +268,6 @@
             <div class="meta">
               <b>DAB:</b> ${escapeHtml(d["DAB Name"])} (${escapeHtml(d["DAB PRM ID"])})<br>
               <b>Mobile:</b> ${escapeHtml(d["DAB Mobile Number"])}<br>
-              <b>Distributor:</b> ${escapeHtml(d["Distributor Name"])}<br>
               <b>Address:</b> ${escapeHtml(d["Address"])}, ${escapeHtml(d["Pin Code"])}<br>
               <b>Timing:</b> ${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}
             </div>
@@ -277,12 +303,13 @@
   }
 
   function copyWhatsAppText(){
-    if(latestData.length === 0){
-      alert("No data loaded yet.");
+    const selected = latestData.filter(d => selectedKeys.has(String(d["Timestamp"])));
+    if(selected.length === 0){
+      alert("Select at least one activity (tick 'Select for broadcast' on the entries you want) before copying.");
       return;
     }
     const grouped = {};
-    latestData.forEach(d => {
+    selected.forEach(d => {
       const t = d["Territory"] || "Unassigned";
       if(!grouped[t]) grouped[t] = [];
       grouped[t].push(d);
