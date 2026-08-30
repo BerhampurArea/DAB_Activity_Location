@@ -266,6 +266,10 @@
         <input type="text" id="dabName" placeholder="Full name of DAB" required>
       </div>
       <div class="field">
+        <label for="dabMobile">DAB Mobile Number</label>
+        <input type="text" id="dabMobile" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" required>
+      </div>
+      <div class="field">
         <label for="distributorName">Distributor Name</label>
         <input type="text" id="distributorName" placeholder="Distributor name" required>
       </div>
@@ -358,6 +362,7 @@
     const territory = document.getElementById("territory").value;
     const dabPrmId = document.getElementById("dabPrmId").value.trim();
     const dabName = document.getElementById("dabName").value.trim();
+    const dabMobile = document.getElementById("dabMobile").value.trim();
     const distributorName = document.getElementById("distributorName").value.trim();
     const jioPointName = document.getElementById("jioPointName").value.trim();
     const address = document.getElementById("address").value.trim();
@@ -367,7 +372,7 @@
     const timeTo = document.getElementById("timeTo").value;
     const activityTypeEl = document.querySelector('input[name="activityType"]:checked');
 
-    if(!territory || !dabPrmId || !dabName || !distributorName || !jioPointName ||
+    if(!territory || !dabPrmId || !dabName || !dabMobile || !distributorName || !jioPointName ||
        !address || !pinCode || !date || !timeFrom || !timeTo || !activityTypeEl){
       showMsg("Please fill all fields before submitting.", "error");
       return;
@@ -376,11 +381,16 @@
       showMsg("Pin code should be 6 digits.", "error");
       return;
     }
+    if(dabMobile.length !== 10){
+      showMsg("Mobile number should be 10 digits.", "error");
+      return;
+    }
 
     const payload = {
       territory: territory,
       dabPrmId: dabPrmId,
       dabName: dabName,
+      dabMobile: dabMobile,
       distributorName: distributorName,
       jioPointName: jioPointName,
       latitude: capturedLat,
