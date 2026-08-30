@@ -59,19 +59,9 @@
   .date-input{
     padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;
     font-size:14px;font-family:inherit;background:var(--white);color:var(--ink);
+    width:100%;
   }
-  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .chip{
-    padding:8px 14px;border-radius:20px;border:1.5px solid var(--line);
-    background:var(--white);font-size:12.5px;font-weight:700;color:var(--muted);
-    cursor:pointer;white-space:nowrap;
-  }
-  .chip.active{
-    background:var(--blue);border-color:var(--blue);color:#fff;
-  }
-  .summary{
-    display:flex;gap:10px;margin-bottom:16px;
-  }
+  .summary{display:flex;gap:10px;margin:16px 0;}
   .summary .stat{
     flex:1;background:var(--white);border:1px solid var(--line);
     border-radius:10px;padding:12px;text-align:center;
@@ -94,28 +84,37 @@
   .select-chk{
     display:flex;align-items:center;gap:8px;
     font-size:12.5px;font-weight:700;color:var(--muted);
-    padding:9px 4px;cursor:pointer;user-select:none;
+    padding-bottom:10px;margin-bottom:10px;
+    border-bottom:1px dashed var(--line);
+    cursor:pointer;user-select:none;
   }
-  .select-chk input{width:17px;height:17px;accent-color:var(--blue);cursor:pointer;}
+  .select-chk input{width:17px;height:17px;accent-color:var(--blue);cursor:pointer;flex-shrink:0;}
   .select-chk.selected{color:var(--blue);}
-  .dab-card .top-row{
+  .dab-card .name-row{
     display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
-    margin-bottom:8px;
+    margin-bottom:10px;
   }
-  .dab-card .name{font-size:15px;font-weight:700;}
+  .dab-card .name{font-size:16px;font-weight:800;color:var(--navy);}
+  .dab-card .sub{font-size:12px;color:var(--muted);margin-top:2px;}
   .dab-card .type-badge{
     font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
     background:var(--blue-light);color:var(--blue);white-space:nowrap;
+    flex-shrink:0;
   }
-  .dab-card .meta{font-size:13px;color:var(--muted);line-height:1.6;}
-  .dab-card .meta b{color:var(--ink);}
-  .dab-card .actions{margin-top:10px;display:flex;gap:8px;}
-  .dab-card .actions a{
-    flex:1;text-align:center;padding:9px;border-radius:8px;
-    font-size:12.5px;font-weight:700;text-decoration:none;
-    border:1.5px solid var(--line);color:var(--navy);
+  .info-row{
+    display:flex;align-items:center;gap:10px;
+    font-size:14px;padding:7px 0;
   }
-  .dab-card .actions a.map{background:var(--blue-light);color:var(--blue);border-color:var(--blue-light);}
+  .info-row .icon{width:20px;text-align:center;flex-shrink:0;}
+  .info-row .val{font-weight:600;}
+  .info-row a{color:var(--blue);text-decoration:none;font-weight:700;}
+  .map-btn{
+    display:block;text-align:center;margin-top:12px;
+    padding:12px;border-radius:9px;
+    background:var(--blue);color:#fff;
+    font-size:14px;font-weight:700;text-decoration:none;
+  }
+  .map-btn:active{opacity:.85;}
   .empty{
     text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;
   }
@@ -140,18 +139,9 @@
     <label>Date</label>
     <input type="date" id="dateFilter" class="date-input">
   </div>
-  <div class="filters">
-    <label>Activity Type</label>
-    <div class="chip-row" id="activityChips">
-      <div class="chip active" data-type="">All</div>
-      <div class="chip" data-type="Shamiyana">Shamiyana</div>
-      <div class="chip" data-type="Gazebo">Gazebo</div>
-      <div class="chip" data-type="Umbrella">Umbrella</div>
-    </div>
-  </div>
 
-  <div class="summary" style="margin-top:16px;">
-    <div class="stat"><div class="num" id="statCount">–</div><div class="label" id="statLabel">Active</div></div>
+  <div class="summary">
+    <div class="stat"><div class="num" id="statCount">–</div><div class="label" id="statLabel">Active Today</div></div>
     <div class="stat"><div class="num" id="statTerritories">–</div><div class="label">Territories</div></div>
   </div>
   <div id="content" class="loading">Loading DAB locations…</div>
@@ -173,8 +163,12 @@
   };
 
   let latestData = [];
-  let selectedActivityType = "";
   let selectedKeys = new Set();
+
+  const dateFilterEl = document.getElementById("dateFilter");
+  const todayISO = new Date().toISOString().slice(0, 10);
+  dateFilterEl.value = todayISO;
+  dateFilterEl.addEventListener("change", loadData);
 
   function toggleSelect(key){
     if(selectedKeys.has(key)) selectedKeys.delete(key);
@@ -182,25 +176,10 @@
     render(latestData, dateFilterEl.value || todayISO);
   }
 
-  const dateFilterEl = document.getElementById("dateFilter");
-  const todayISO = new Date().toISOString().slice(0, 10);
-  dateFilterEl.value = todayISO;
-  dateFilterEl.addEventListener("change", loadData);
-
-  document.getElementById("activityChips").addEventListener("click", function(e){
-    const chip = e.target.closest(".chip");
-    if(!chip) return;
-    document.querySelectorAll("#activityChips .chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    selectedActivityType = chip.dataset.type || "";
-    loadData();
-  });
-
   function loadData(){
     document.getElementById("content").innerHTML = '<div class="loading">Loading DAB locations…</div>';
     const selectedDate = dateFilterEl.value || todayISO;
-    let url = SCRIPT_URL + "?date=" + encodeURIComponent(selectedDate);
-    if(selectedActivityType) url += "&activityType=" + encodeURIComponent(selectedActivityType);
+    const url = SCRIPT_URL + "?date=" + encodeURIComponent(selectedDate);
 
     fetch(url)
       .then(r => r.json())
@@ -212,6 +191,22 @@
         document.getElementById("content").innerHTML =
           '<div class="empty">Could not load data. Check connection or the Apps Script URL.</div>';
       });
+  }
+
+  // Builds a reliable Google Maps link. Prefers GPS coordinates (most
+  // accurate); falls back to the typed address + pin code only when no
+  // coordinates were captured. Uses the universal maps query format,
+  // which opens correctly in both the Google Maps app and browser.
+  function buildMapsLink(d){
+    const lat = String(d["Latitude"] || "").trim();
+    const lng = String(d["Longitude"] || "").trim();
+    if(lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))){
+      return "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(lat + "," + lng);
+    }
+    const addressQuery = [d["Address"], d["Pin Code"]].filter(Boolean).join(", ");
+    return "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(addressQuery || "Odisha");
   }
 
   function render(data, selectedDate){
@@ -228,13 +223,13 @@
       const selCount = data.filter(d => selectedKeys.has(String(d["Timestamp"]))).length;
       copyBtn.textContent = "📋 Copy Selected (" + selCount + ")";
     }
+
     const territories = new Set(data.map(d => d["Territory"]));
     document.getElementById("statTerritories").textContent = territories.size;
 
     const content = document.getElementById("content");
     if(data.length === 0){
-      content.innerHTML = '<div class="empty">No DAB activity locations found for this date' +
-        (selectedActivityType ? " and activity type" : "") + '.</div>';
+      content.innerHTML = '<div class="empty">No DAB activity locations found for this date.</div>';
       return;
     }
 
@@ -250,9 +245,7 @@
       const label = TERRITORY_NAMES[t] || t;
       html += `<div class="territory-group"><div class="territory-title">${label} (${t})</div>`;
       grouped[t].forEach(d => {
-        const mapsLink = d["Latitude"] && d["Longitude"]
-          ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
-          : `https://www.google.com/maps/search/${encodeURIComponent(d["Address"] + " " + d["Pin Code"])}`;
+        const mapsLink = buildMapsLink(d);
         const key = String(d["Timestamp"]);
         const isSelected = selectedKeys.has(key);
         html += `
@@ -261,19 +254,22 @@
               <input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleSelect('${key.replace(/'/g,"\\'")}')">
               ${isSelected ? "Selected for broadcast" : "Select for broadcast"}
             </label>
-            <div class="top-row">
-              <div class="name">${escapeHtml(d["JioPoint Name"] || d["DAB Name"])}</div>
+            <div class="name-row">
+              <div>
+                <div class="name">${escapeHtml(d["DAB Name"])}</div>
+                <div class="sub">${escapeHtml(d["JioPoint Name"] || "")}</div>
+              </div>
               <div class="type-badge">${escapeHtml(d["Activity Type"] || "")}</div>
             </div>
-            <div class="meta">
-              <b>DAB:</b> ${escapeHtml(d["DAB Name"])} (${escapeHtml(d["DAB PRM ID"])})<br>
-              <b>Mobile:</b> ${escapeHtml(d["DAB Mobile Number"])}<br>
-              <b>Address:</b> ${escapeHtml(d["Address"])}, ${escapeHtml(d["Pin Code"])}<br>
-              <b>Timing:</b> ${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}
+            <div class="info-row">
+              <span class="icon">📞</span>
+              <a href="tel:${escapeHtml(d["DAB Mobile Number"])}">${escapeHtml(d["DAB Mobile Number"])}</a>
             </div>
-            <div class="actions">
-              <a class="map" href="${mapsLink}" target="_blank">📍 Open Map</a>
+            <div class="info-row">
+              <span class="icon">🕐</span>
+              <span class="val">${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}</span>
             </div>
+            <a class="map-btn" href="${mapsLink}" target="_blank">📍 Open Location in Maps</a>
           </div>`;
       });
       html += `</div>`;
@@ -308,32 +304,21 @@
       alert("Select at least one activity (tick 'Select for broadcast' on the entries you want) before copying.");
       return;
     }
-    const grouped = {};
-    selected.forEach(d => {
-      const t = d["Territory"] || "Unassigned";
-      if(!grouped[t]) grouped[t] = [];
-      grouped[t].push(d);
+
+    const blocks = selected.map(d => {
+      const mapsLink = buildMapsLink(d);
+      return `📢 Special Jio Offer – Visit Our Activity Location! 📍
+Get your Jio SIM Activation and Best Offer on the Spot! 🎁📱
+👉 Please visit the Activity Location as per the details below, or contact our representative for assistance.
+👤 Representative Name: ${d["DAB Name"]}
+📞 Mobile Number: ${d["DAB Mobile Number"]}
+📍 Location: ${mapsLink}
+⏰ Time: ${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}
+🔥 Visit the location today and get the best offer on the spot!
+Jio — Better Experience, Better Value. 💙`;
     });
 
-    let text = `🚀 *JCA-ACT × DAB | Today's DAB Activity Map*\n`;
-    text += new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" }) + `\n\n`;
-    text += `Route every interested MNP lead to the nearest point below. FREE MNP + Instant Gift.\n\n`;
-
-    Object.keys(grouped).sort().forEach(t => {
-      const label = TERRITORY_NAMES[t] || t;
-      text += `📍 *${label} (${t})*\n`;
-      grouped[t].forEach(d => {
-        const mapsLink = d["Latitude"] && d["Longitude"]
-          ? `https://www.google.com/maps?q=${d["Latitude"]},${d["Longitude"]}`
-          : "";
-        text += `• ${d["JioPoint Name"]} — ${d["Address"]}, ${d["Pin Code"]}\n`;
-        text += `  🕐 ${to12Hour(d["Time From"])}–${to12Hour(d["Time To"])} | ${d["Activity Type"]} | DAB: ${d["DAB Name"]} (${d["DAB Mobile Number"]})\n`;
-        if(mapsLink) text += `  🗺️ ${mapsLink}\n`;
-      });
-      text += `\n`;
-    });
-
-    text += `🔥 No Lead Left Undelivered! Direct every customer today.`;
+    const text = blocks.join("\n\n———\n\n");
 
     navigator.clipboard.writeText(text).then(() => {
       alert("Broadcast text copied — paste directly into the JCA-ACT WhatsApp group.");
@@ -344,8 +329,6 @@
 
   loadData();
 </script>
-<!-- date + activity-type filters wired above; DAB mobile shown in cards and broadcast text -->
-
 
 </body>
 </html>
