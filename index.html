@@ -244,17 +244,40 @@
     <div class="card">
       <h2>DAB &amp; Distributor Details</h2>
       <div class="field">
-        <label for="territory">Territory</label>
-        <select id="territory" required>
-          <option value="" disabled selected>Select territory</option>
-          <option value="BRAH">Berhampur (BRAH)</option>
-          <option value="BNPN">Bhawanipatna (BNPN)</option>
-          <option value="JYPR">Jeypore (JYPR)</option>
-          <option value="RYGD">Rayagada (RYGD)</option>
-          <option value="SNBD">Sunabeda (SNBD)</option>
-          <option value="BLGR">Balangir (BLGR)</option>
-          <option value="KURD">Khurdha (KURD)</option>
-          <option value="JTNI">Jatani (JTNI)</option>
+        <label for="jcName">JC Name</label>
+        <select id="jcName" required>
+          <option value="" disabled selected>Select JC Name</option>
+          <option value="OR-PURI-JC-01">OR-PURI-JC-01</option>
+          <option value="OR-PRDP-JC-01">OR-PRDP-JC-01</option>
+          <option value="OR-KNDP-JC-01">OR-KNDP-JC-01</option>
+          <option value="OR-BJJG-JC-01">OR-BJJG-JC-01</option>
+          <option value="OR-BLGR-JC-01">OR-BLGR-JC-01</option>
+          <option value="OR-JRGD-JC-01">OR-JRGD-JC-01</option>
+          <option value="OR-BDRK-JC-01">OR-BDRK-JC-01</option>
+          <option value="OR-KURD-JC-01">OR-KURD-JC-01</option>
+          <option value="OR-BRPD-JC-01">OR-BRPD-JC-01</option>
+          <option value="OR-BRBL-JC-01">OR-BRBL-JC-01</option>
+          <option value="OR-CCKK-JC-01">OR-CCKK-JC-01</option>
+          <option value="OR-JGPT-JC-01">OR-JGPT-JC-01</option>
+          <option value="OR-DKLL-JC-01">OR-DKLL-JC-01</option>
+          <option value="OR-SMBP-JC-01">OR-SMBP-JC-01</option>
+          <option value="OR-NLCO-JC-01">OR-NLCO-JC-01</option>
+          <option value="OR-RGNP-JC-01">OR-RGNP-JC-01</option>
+          <option value="OR-BRAH-JC-01">OR-BRAH-JC-01</option>
+          <option value="OR-JTNI-JC-01">OR-JTNI-JC-01</option>
+          <option value="OR-BLSR-JC-01">OR-BLSR-JC-01</option>
+          <option value="OR-JYPR-JC-01">OR-JYPR-JC-01</option>
+          <option value="OR-BBSR-JC-01">OR-BBSR-JC-01</option>
+          <option value="OR-TLCH-JC-01">OR-TLCH-JC-01</option>
+          <option value="OR-SUNA-JC-01">OR-SUNA-JC-01</option>
+          <option value="OR-BBSR-JC-02">OR-BBSR-JC-02</option>
+          <option value="OR-SNBD-JC-01">OR-SNBD-JC-01</option>
+          <option value="OR-KDJR-JC-01">OR-KDJR-JC-01</option>
+          <option value="OR-RYGD-JC-01">OR-RYGD-JC-01</option>
+          <option value="OR-RRKL-JC-01">OR-RRKL-JC-01</option>
+          <option value="OR-BLPH-JC-01">OR-BLPH-JC-01</option>
+          <option value="OR-BGRH-JC-01">OR-BGRH-JC-01</option>
+          <option value="OR-BNPN-JC-01">OR-BNPN-JC-01</option>
         </select>
       </div>
       <div class="field">
@@ -359,7 +382,7 @@
   }
 
   function submitForm(){
-    const territory = document.getElementById("territory").value;
+    const jcName = document.getElementById("jcName").value;
     const dabPrmId = document.getElementById("dabPrmId").value.trim();
     const dabName = document.getElementById("dabName").value.trim();
     const dabMobile = document.getElementById("dabMobile").value.trim();
@@ -372,7 +395,7 @@
     const timeTo = document.getElementById("timeTo").value;
     const activityTypeEl = document.querySelector('input[name="activityType"]:checked');
 
-    if(!territory || !dabPrmId || !dabName || !dabMobile || !distributorName || !jioPointName ||
+    if(!jcName || !dabPrmId || !dabName || !dabMobile || !distributorName || !jioPointName ||
        !address || !pinCode || !date || !timeFrom || !timeTo || !activityTypeEl){
       showMsg("Please fill all fields before submitting.", "error");
       return;
@@ -387,7 +410,7 @@
     }
 
     const payload = {
-      territory: territory,
+      jcName: jcName,
       dabPrmId: dabPrmId,
       dabName: dabName,
       dabMobile: dabMobile,
