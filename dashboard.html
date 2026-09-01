@@ -139,10 +139,47 @@
     <label>Date</label>
     <input type="date" id="dateFilter" class="date-input">
   </div>
+  <div class="filters">
+    <label>JC Name</label>
+    <select id="jcNameFilter" class="date-input">
+      <option value="">All JC Names</option>
+      <option value="OR-PURI-JC-01">OR-PURI-JC-01</option>
+      <option value="OR-PRDP-JC-01">OR-PRDP-JC-01</option>
+      <option value="OR-KNDP-JC-01">OR-KNDP-JC-01</option>
+      <option value="OR-BJJG-JC-01">OR-BJJG-JC-01</option>
+      <option value="OR-BLGR-JC-01">OR-BLGR-JC-01</option>
+      <option value="OR-JRGD-JC-01">OR-JRGD-JC-01</option>
+      <option value="OR-BDRK-JC-01">OR-BDRK-JC-01</option>
+      <option value="OR-KURD-JC-01">OR-KURD-JC-01</option>
+      <option value="OR-BRPD-JC-01">OR-BRPD-JC-01</option>
+      <option value="OR-BRBL-JC-01">OR-BRBL-JC-01</option>
+      <option value="OR-CCKK-JC-01">OR-CCKK-JC-01</option>
+      <option value="OR-JGPT-JC-01">OR-JGPT-JC-01</option>
+      <option value="OR-DKLL-JC-01">OR-DKLL-JC-01</option>
+      <option value="OR-SMBP-JC-01">OR-SMBP-JC-01</option>
+      <option value="OR-NLCO-JC-01">OR-NLCO-JC-01</option>
+      <option value="OR-RGNP-JC-01">OR-RGNP-JC-01</option>
+      <option value="OR-BRAH-JC-01">OR-BRAH-JC-01</option>
+      <option value="OR-JTNI-JC-01">OR-JTNI-JC-01</option>
+      <option value="OR-BLSR-JC-01">OR-BLSR-JC-01</option>
+      <option value="OR-JYPR-JC-01">OR-JYPR-JC-01</option>
+      <option value="OR-BBSR-JC-01">OR-BBSR-JC-01</option>
+      <option value="OR-TLCH-JC-01">OR-TLCH-JC-01</option>
+      <option value="OR-SUNA-JC-01">OR-SUNA-JC-01</option>
+      <option value="OR-BBSR-JC-02">OR-BBSR-JC-02</option>
+      <option value="OR-SNBD-JC-01">OR-SNBD-JC-01</option>
+      <option value="OR-KDJR-JC-01">OR-KDJR-JC-01</option>
+      <option value="OR-RYGD-JC-01">OR-RYGD-JC-01</option>
+      <option value="OR-RRKL-JC-01">OR-RRKL-JC-01</option>
+      <option value="OR-BLPH-JC-01">OR-BLPH-JC-01</option>
+      <option value="OR-BGRH-JC-01">OR-BGRH-JC-01</option>
+      <option value="OR-BNPN-JC-01">OR-BNPN-JC-01</option>
+    </select>
+  </div>
 
   <div class="summary">
     <div class="stat"><div class="num" id="statCount">–</div><div class="label" id="statLabel">Active Today</div></div>
-    <div class="stat"><div class="num" id="statTerritories">–</div><div class="label">Territories</div></div>
+    <div class="stat"><div class="num" id="statTerritories">–</div><div class="label">JC Names</div></div>
   </div>
   <div id="content" class="loading">Loading DAB locations…</div>
 </main>
@@ -151,24 +188,15 @@
   // TODO: paste your deployed Apps Script Web App URL here (same as index.html)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcFejoFjqykdmz3Bwoa0ZNblDAV6UkvFy9939mK74SDzb74qIsFCU8FnoJItiZR5MN0g/exec";
 
-  const TERRITORY_NAMES = {
-    BRAH: "Berhampur",
-    BNPN: "Bhawanipatna",
-    JYPR: "Jeypore",
-    RYGD: "Rayagada",
-    SNBD: "Sunabeda",
-    BLGR: "Balangir",
-    KURD: "Khurdha",
-    JTNI: "Jatani"
-  };
-
   let latestData = [];
   let selectedKeys = new Set();
 
   const dateFilterEl = document.getElementById("dateFilter");
+  const jcNameFilterEl = document.getElementById("jcNameFilter");
   const todayISO = new Date().toISOString().slice(0, 10);
   dateFilterEl.value = todayISO;
   dateFilterEl.addEventListener("change", loadData);
+  jcNameFilterEl.addEventListener("change", loadData);
 
   function toggleSelect(key){
     if(selectedKeys.has(key)) selectedKeys.delete(key);
@@ -179,7 +207,9 @@
   function loadData(){
     document.getElementById("content").innerHTML = '<div class="loading">Loading DAB locations…</div>';
     const selectedDate = dateFilterEl.value || todayISO;
-    const url = SCRIPT_URL + "?date=" + encodeURIComponent(selectedDate);
+    const selectedJcName = jcNameFilterEl.value;
+    let url = SCRIPT_URL + "?date=" + encodeURIComponent(selectedDate);
+    if(selectedJcName) url += "&jcName=" + encodeURIComponent(selectedJcName);
 
     fetch(url)
       .then(r => r.json())
@@ -224,8 +254,8 @@
       copyBtn.textContent = "📋 Copy Selected (" + selCount + ")";
     }
 
-    const territories = new Set(data.map(d => d["Territory"]));
-    document.getElementById("statTerritories").textContent = territories.size;
+    const jcNames = new Set(data.map(d => d["JC Name"]));
+    document.getElementById("statTerritories").textContent = jcNames.size;
 
     const content = document.getElementById("content");
     if(data.length === 0){
@@ -235,15 +265,14 @@
 
     const grouped = {};
     data.forEach(d => {
-      const t = d["Territory"] || "Unassigned";
+      const t = d["JC Name"] || "Unassigned";
       if(!grouped[t]) grouped[t] = [];
       grouped[t].push(d);
     });
 
     let html = "";
     Object.keys(grouped).sort().forEach(t => {
-      const label = TERRITORY_NAMES[t] || t;
-      html += `<div class="territory-group"><div class="territory-title">${label} (${t})</div>`;
+      html += `<div class="territory-group"><div class="territory-title">${t}</div>`;
       grouped[t].forEach(d => {
         const mapsLink = buildMapsLink(d);
         const key = String(d["Timestamp"]);
