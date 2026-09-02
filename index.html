@@ -210,13 +210,24 @@
   .msg.success{display:block;background:#E8F6EF;color:var(--green);}
   .msg.error{display:block;background:#FBEAEA;color:#B23B3B;}
   .hint{font-size:12px;color:var(--muted);margin-top:5px;}
+  .photo-preview{
+    margin-top:10px;border:1.5px solid var(--line);border-radius:9px;
+    overflow:hidden;
+  }
+  .photo-preview img{
+    width:100%;display:block;max-height:220px;object-fit:cover;
+  }
+  .photo-remove{
+    width:100%;padding:9px;border:none;border-top:1px solid var(--line);
+    background:#FBEAEA;color:#B23B3B;font-size:12.5px;font-weight:700;
+    cursor:pointer;
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="eyebrow">Berhampur Area · Daily Field Capture</div>
-  <h1>DAB Activity Location</h1>
+  <h1>DAB Activity Location — Odisha</h1>
   <p>Fill this once at the start of today's activity. Takes under a minute — JCA-ACT will route customers here.</p>
 </header>
 
@@ -232,11 +243,15 @@
       <div class="row2">
         <div class="field">
           <label for="timeFrom">Time From</label>
-          <input type="time" id="timeFrom" required>
+          <select id="timeFrom" required>
+            <option value="" disabled selected>Select time</option>
+          </select>
         </div>
         <div class="field">
           <label for="timeTo">Time To</label>
-          <input type="time" id="timeTo" required>
+          <select id="timeTo" required>
+            <option value="" disabled selected>Select time</option>
+          </select>
         </div>
       </div>
     </div>
@@ -244,7 +259,7 @@
     <div class="card">
       <h2>DAB &amp; Distributor Details</h2>
       <div class="field">
-        <label for="jcName">JC Name</label>
+        <label for="jcName">JC Name <span style="color:#B23B3B;">*</span></label>
         <select id="jcName" required>
           <option value="" disabled selected>Select JC Name</option>
           <option value="OR-PURI-JC-01">OR-PURI-JC-01</option>
@@ -317,6 +332,15 @@
         <label for="pinCode">Pin Code</label>
         <input type="text" id="pinCode" inputmode="numeric" maxlength="6" placeholder="6-digit pin code" required>
       </div>
+      <div class="field" style="margin-top:4px;">
+        <label>Activity Location Photo</label>
+        <button type="button" class="gps-btn" id="photoBtn">📷 Take / Upload Photo</button>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none;">
+        <div class="photo-preview" id="photoPreview" style="display:none;">
+          <img id="photoThumb" alt="Activity location photo preview">
+          <button type="button" class="photo-remove" id="photoRemoveBtn">✕ Remove photo</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -351,8 +375,71 @@
 
   let capturedLat = "";
   let capturedLng = "";
+  let capturedPhotoDataUrl = "";
 
   document.getElementById("date").valueAsDate = new Date();
+
+  // Photo capture: resize/compress client-side before upload so it's
+  // reliable over slow field connections.
+  document.getElementById("photoBtn").addEventListener("click", function(){
+    document.getElementById("photoInput").click();
+  });
+
+  document.getElementById("photoInput").addEventListener("change", function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const img = new Image();
+      img.onload = function(){
+        const maxDim = 1000;
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w > h){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        capturedPhotoDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        document.getElementById("photoThumb").src = capturedPhotoDataUrl;
+        document.getElementById("photoPreview").style.display = "block";
+        document.getElementById("photoBtn").textContent = "📷 Retake / Change Photo";
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById("photoRemoveBtn").addEventListener("click", function(){
+    capturedPhotoDataUrl = "";
+    document.getElementById("photoInput").value = "";
+    document.getElementById("photoPreview").style.display = "none";
+    document.getElementById("photoBtn").textContent = "📷 Take / Upload Photo";
+  });
+
+  // Build 12-hour AM/PM time options in 30-minute steps.
+  // Option value stays 24-hour "HH:MM" (matches backend/sheet format);
+  // only the visible label is 12-hour.
+  (function populateTimeDropdowns(){
+    const timeFrom = document.getElementById("timeFrom");
+    const timeTo = document.getElementById("timeTo");
+    for(let h = 0; h < 24; h++){
+      for(let m = 0; m < 60; m += 30){
+        const value = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
+        let hour12 = h % 12;
+        if(hour12 === 0) hour12 = 12;
+        const suffix = h < 12 ? "AM" : "PM";
+        const label = hour12 + ":" + String(m).padStart(2,"0") + " " + suffix;
+        const opt1 = document.createElement("option");
+        opt1.value = value; opt1.textContent = label;
+        timeFrom.appendChild(opt1);
+        const opt2 = document.createElement("option");
+        opt2.value = value; opt2.textContent = label;
+        timeTo.appendChild(opt2);
+      }
+    }
+  })();
 
   document.getElementById("gpsBtn").addEventListener("click", function(){
     const btn = this;
@@ -423,7 +510,9 @@
       date: date,
       timeFrom: timeFrom,
       timeTo: timeTo,
-      activityType: activityTypeEl.value
+      activityType: activityTypeEl.value,
+      photoBase64: capturedPhotoDataUrl ? capturedPhotoDataUrl.split(",")[1] : "",
+      photoMimeType: "image/jpeg"
     };
 
     const btn = document.getElementById("submitBtn");
@@ -443,6 +532,9 @@
         document.getElementById("date").valueAsDate = new Date();
         document.getElementById("gpsStatus").classList.remove("active");
         capturedLat = ""; capturedLng = "";
+        capturedPhotoDataUrl = "";
+        document.getElementById("photoPreview").style.display = "none";
+        document.getElementById("photoBtn").textContent = "📷 Take / Upload Photo";
         btn.disabled = false;
         btn.textContent = "Submit Activity Location";
       }, 2500);
