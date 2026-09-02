@@ -115,6 +115,15 @@
     font-size:14px;font-weight:700;text-decoration:none;
   }
   .map-btn:active{opacity:.85;}
+  .location-row{
+    display:flex;gap:10px;margin-top:12px;align-items:stretch;
+  }
+  .location-row .map-btn{margin-top:0;flex:1;display:flex;align-items:center;justify-content:center;}
+  .location-photo{
+    width:64px;height:64px;flex-shrink:0;border-radius:9px;overflow:hidden;
+    border:1.5px solid var(--line);
+  }
+  .location-photo img{width:100%;height:100%;object-fit:cover;display:block;}
   .empty{
     text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;
   }
@@ -298,7 +307,10 @@
               <span class="icon">🕐</span>
               <span class="val">${to12Hour(d["Time From"])} – ${to12Hour(d["Time To"])}</span>
             </div>
-            <a class="map-btn" href="${mapsLink}" target="_blank">📍 Open Location in Maps</a>
+            <div class="location-row">
+              <a class="map-btn" href="${mapsLink}" target="_blank">📍 Open Location in Maps</a>
+              ${d["Photo URL"] ? `<a class="location-photo" href="${d["Photo URL"]}" target="_blank"><img src="${d["Photo URL"]}" alt="Activity location photo"></a>` : ""}
+            </div>
           </div>`;
       });
       html += `</div>`;
