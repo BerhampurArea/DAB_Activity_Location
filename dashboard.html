@@ -223,12 +223,20 @@
     fetch(url)
       .then(r => r.json())
       .then(res => {
+        if(res.status === "error"){
+          console.error("Apps Script error:", res.message);
+          document.getElementById("content").innerHTML =
+            '<div class="empty">Script error: ' + escapeHtml(res.message || "unknown") +
+            '<br><small>Check the Apps Script SCRIPT_URL is correct and redeployed.</small></div>';
+          return;
+        }
         latestData = res.data || [];
         render(latestData, selectedDate);
       })
-      .catch(() => {
+      .catch(err => {
+        console.error("Fetch failed:", err);
         document.getElementById("content").innerHTML =
-          '<div class="empty">Could not load data. Check connection or the Apps Script URL.</div>';
+          '<div class="empty">Could not load data. Check connection, or that SCRIPT_URL in this file is your correct deployed Apps Script /exec link.</div>';
       });
   }
 
